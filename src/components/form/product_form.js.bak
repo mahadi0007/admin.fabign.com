@@ -1,0 +1,1191 @@
+import React, { useEffect, useState, useCallback, useRef } from 'react'
+import JoditEditor from 'jodit-react'
+// import { Form } from 'react-bootstrap'
+import { useForm } from 'react-hook-form'
+import { Text } from '../text'
+import { Container } from '../container'
+import { FormGroup } from '../formGroup'
+import { PrimaryButton, SecondaryButton } from '../button'
+// import { SearchableSelect } from '../select'
+import { FileUploader, MultiFileUploader } from '../fileUploader'
+import { CreatableSelect, SingleSelect } from '../select'
+import { Requests } from '../../utils/http'
+import { CustomError } from '../../utils/error';
+import { Toastify } from '../../components/toastify';
+import { AlertCircle, Minus, MinusCircle, Plus, PlusCircle } from 'react-feather'
+import { v4 as uuid } from 'uuid'
+
+export const ProductForm = (props) => {
+    const { register, handleSubmit, setValue, getValues, setError, clearErrors, formState: { errors } } = useForm()
+    const productData = props.productData ? props.productData : {}
+    const [brand, setBrand] = useState(props.productData && props.productData.brand && props.productData.brand._id ? props.productData.brand._id : null)
+    const [category, setCategory] = useState(props.productData && props.productData.category && props.productData.category._id ? props.productData.category._id : null)
+    const [subcategory, setSubsubcategory] = useState(props.productData && props.productData.subcategory && props.productData.subcategory._id ? props.productData.subcategory._id : null)
+    const [businessLocation, setBusinessLocation] = useState([])
+    const [brandList, setBrandList] = useState([])
+    const [categoryList, setCategoryList] = useState([])
+    const [largeThumbnail, setLargeThumbnail] = useState(props.productData && props.productData.thumbnail &&
+        props.productData.thumbnail.small ? props.productData.thumbnail.small : null)
+    const [description, setDescription] = useState(props.productData && props.productData.description ? props.productData.description : null)
+    const [shortDescription, setShortDescription] = useState(props.productData && props.productData.shortDescription ? props.productData.shortDescription : null)
+    const [stockmanage, setStockManage] = useState(false)
+    const [productId, setProductId] = useState(null)
+
+    // only for multi image
+    const [product_image_error, setProductImageError] = useState("")
+    const [productImages, setProductImages] = useState([])
+    const [productImages2, setProductImages2] = useState([])
+    // repetar section
+    const [customfields, setCustomFields] = useState([{ id: uuid(), label: null, value: null }])
+
+    // variation
+    const [variations, setVariations] = useState([])
+    const [variant, setVariant] = useState([])
+    const [loading, setLoading] = useState(false)
+
+    // only for rich text editors
+    const editor = useRef(null)
+    const editor2 = useRef(null)
+
+
+    // fetch brand data
+    const fetchEBrand = useCallback(async (page) => {
+        try {
+
+            const items = []
+            const response = await Requests.EBrand.Index(page)
+            if (response && response.status === 200) {
+                // setBrandList(response.data.body.brand)
+                if (response.data && response.data.body && response.data.body.brand && response.data.body.brand.length > 0) {
+                    for (let i = 0; i < response.data.body.brand.length; i++) {
+                        const element = response.data.body.brand[i]
+
+                        items.push({
+                            label: element.title,
+                            value: element._id
+                        })
+                    }
+                }
+            }
+            setBrandList(items)
+
+        } catch (error) {
+            if (error) {
+
+                if (error.response) {
+                    await CustomError(error.response)
+                } else {
+                    Toastify.Error("Something going wrong.")
+                }
+            }
+        }
+    }, [])
+
+    // fetch category data
+    const fetchCategory = useCallback(async (page) => {
+        try {
+
+            const items = []
+            const response = await Requests.ECategory.Index(page)
+            if (response && response.status === 200) {
+                // setData(response.data.body)
+                if (response.data && response.data.body && response.data.body.category && response.data.body.category.length > 0) {
+                    for (let i = 0; i < response.data.body.category.length; i++) {
+                        const element = response.data.body.category[i]
+
+                        items.push({
+                            label: element.name,
+                            value: element._id
+                        })
+                    }
+                }
+            }
+            setCategoryList(items)
+
+        } catch (error) {
+            if (error) {
+
+                if (error.response) {
+                    await CustomError(error.response)
+                } else {
+                    Toastify.Error("Something going wrong.")
+                }
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchEBrand(1)
+    }, [fetchEBrand])
+
+    useEffect(() => {
+        fetchCategory(1)
+    }, [fetchCategory])
+
+
+    // Element form Submit
+    const onSubmit = async data => {
+        let isError = false
+
+        if (!brand) {
+            setError("brand", {
+                type: "manual",
+                message: "Brand is required"
+            })
+            isError = true
+        }
+
+        if (!category) {
+            setError("category", {
+                type: "manual",
+                message: "Category is required"
+            })
+            isError = true
+        }
+
+
+        if (!largeThumbnail) {
+            setError("largeThumbnail", {
+                type: "manual",
+                message: "Image is required"
+            })
+            isError = true
+        }
+
+        if (isError) return
+
+
+        const gallaryImages = []
+        for (let i = 0; i < productImages2.length; i++) {
+            const element = productImages2[i];
+            gallaryImages.push({
+                small: element,
+                large: element
+            })
+        }
+
+        const formData = {
+            productId: productId,
+            name: data.name,
+            banglaName: data.banglaName,
+            sku: data.sku,
+            barcodeType: data.barcodeType,
+            brand: brand,
+            category: category,
+            subcategory: subcategory,
+            manageStock: stockmanage,
+            shortDescription: shortDescription,
+            description: description,
+            featuredImage: largeThumbnail,
+            gallaryImages: gallaryImages,
+            weight: data.weight,
+            length: data.length,
+            width: data.width,
+            height: data.height,
+            applicableTax: data.applicableTax,
+            sellingPriceTax: data.sellingPriceTax,
+            productType: data.productType,
+            published: true,
+            stockAmount: data.stockAmount,
+            alertQuantity: stockmanage ? data.alertQuantity : null,
+            business_locations: businessLocation,
+            customFields: customfields,
+            variation: variant
+        }
+        // console.log(formData)
+        props.onSubmit(formData)
+    }
+
+    // handle Products single Image
+    const handleSingleImage = async (file) => {
+        const formData = new FormData()
+        formData.append("files", file)
+        formData.append("type", "productImage")
+        if (productId !== null) {
+            formData.append("productId", productId ?? null)
+        }
+        try {
+            const response = await Requests.EProduct.UploadFile(formData)
+            console.log(response)
+            if (response.data.statusCode === 200) {
+                const featuredImage = {
+                    small: response.data.body.small[0],
+                    large: response.data.body.large[0]
+                }
+                setLargeThumbnail(featuredImage)
+                setProductId(response.data.body.productId)
+            }
+        } catch (error) {
+            if (error) {
+                console.log(error)
+            }
+        }
+    }
+
+
+    // for handling images from local state and server state
+    const handleProductImages = async (file) => {
+        if (productImages2.length >= 3) {
+            setProductImageError("Maximum 3 Image Allowed");
+            return;
+        }
+
+        // for uploading to server
+        const formData = new FormData()
+        formData.append("files", file)
+        formData.append("type", "productImage")
+        if (productId !== null) {
+            formData.append("productId", productId ?? null)
+        }
+        let newimage = {}
+        try {
+            const response = await Requests.EProduct.UploadFile(formData)
+            console.log(response)
+            if (response.data.body.statusCode === 200) {
+                newimage = {
+                    small: response.data.body.small[0],
+                    large: response.data.body.large[0]
+                }
+                setProductId(response.data.body.productId)
+            }
+        } catch (error) {
+            if (error) {
+                console.log(error)
+            }
+        }
+
+
+        // for product upload section
+        const newImages = [...productImages]
+        newImages.push(newimage);
+        setProductImages(productImages2.slice(productImages2.length - 3, productImages.length));
+
+
+        // for handleLocalSection
+        const newImages2 = [...productImages2]
+        newImages2.push(file)
+        console.log(newImages2)
+        setProductImages2(newImages2)
+    }
+
+    // for handle local images
+    const handleLocalImageDelete = (i) => {
+        const images = [...productImages2]
+        const newImages = images.filter((img, idx) => idx !== i)
+
+        setProductImages2(newImages);
+        setProductImageError("")
+    }
+
+
+    // custom fields section {from here we will continue variation section}
+    const handleAddCustomFields = (id) => {
+        setCustomFields([...customfields, {
+            id: id,
+            label: '',
+            value: ''
+        }])
+    }
+
+    const handleRemoveCustomFields = (id) => {
+        const values = [...customfields]
+        if (customfields.length !== 1) {
+            values.splice(values.findIndex(value => value.id === id), 1)
+            setCustomFields(values)
+        }
+    }
+
+    // adding values to custom fields
+    const handleChangeInputCustomField = (id, event, type) => {
+        const newInputFIelds = customfields.map(item => {
+            if (id === item.id) {
+                if (type === "label") {
+                    item["label"] = event.target.value
+                }
+                if (type === "value") {
+                    item["value"] = event.target.value
+                }
+            }
+            return item
+        })
+        setCustomFields(newInputFIelds)
+    }
+
+    // variant section {from here we will continue variation section}
+    const fetchVariants = useCallback(async () => {
+        try {
+            const response = await Requests.Variation.Index()
+            const data = response.data.body.variation
+            setVariations(data)
+        } catch (error) {
+            if (error) {
+                console.log(error)
+            }
+        }
+    }, [])
+    // fetching varients
+    useEffect(() => {
+        fetchVariants()
+    }, [fetchVariants])
+
+    // setting varient to create extra fields
+    const handleSetVariant = (data, id) => {
+        setLoading(false)
+        setTimeout(() => {
+            setLoading(true)
+        }, 100)
+        if (data !== null) {
+            const values = JSON.parse(data)
+            if (values.values) {
+                const varient = values.values.map(item => {
+                    return (
+                        {
+                            id: uuid(),
+                            value: item
+                        }
+                    )
+                })
+                const newvars = variant.map(item => {
+                    if (item.id === id) {
+                        item["parent"] = values._id
+                        item["values"] = varient
+                    }
+                    return item
+                })
+                setVariant(newvars)
+            } else {
+                setVariant([])
+            }
+        } else {
+            if (variations.length - 2 < variant.length) {
+                Toastify.Error("Can't Add more variations")
+            } else {
+                const newarr = {
+                    id: id,
+                    values: []
+                }
+                setVariant([...variant, newarr])
+
+            }
+        }
+    }
+
+    const handleAddVariationValues = (id) => {
+        const varients = variant.find(item => item.id === id)
+
+        const newarr = varients.values
+        newarr.push({
+            id: uuid(),
+            value: '',
+        })
+        const newvars = variant.map(item => {
+            item["values"] = newarr
+            return item
+        })
+        setVariant(newvars)
+    }
+
+    // remove varient
+    const handleRemoveVarient = (mid, id) => {
+        setLoading(false)
+        const varients = variant.find(item => item.id === mid)
+        varients.values.splice(varients.values.findIndex(value => value.id === id), 1)
+
+        const newvars = variant.map(item => {
+            if (item.id === varients.id) {
+                item["values"] = varients.values
+            }
+            return item
+        })
+        setTimeout(() => {
+            setLoading(true)
+        }, 2)
+        setVariant(newvars)
+    }
+
+    // adding values to varient
+    const handleChangeInputVarient = (mid, id, event, type) => {
+        const newInputFIelds = variant.map(item => {
+            if (mid === item.id) {
+                item.values.map((async item2 => {
+                    if (item2.id === id) {
+                        if (type === "sku") item2['sku'] = event.target.value
+                        if (type === "value") item2['value'] = event.target.value
+                        if (type === "priceExcludingTax") item2["priceExcludingTax"] = event.target.value
+                        if (type === "priceIncludingTax") item2["priceIncludingTax"] = event.target.value
+                        if (type === "margin") item2["margin"] = event.target.value
+                        if (type === "sellingPrice") item2["sellingPrice"] = event.target.value
+                        if (type === "manageStock") item2["manageStock"] = event.target.value
+                        if (type === "alertAmount") item2["alertAmount"] = event.target.value
+                        if (type === "stockAmount") item2["stockAmount"] = event.target.value
+                        if (type === "images") {
+                            const files = event.target.files
+                            const newfiles = []
+                            let prodid = productId ?? null
+                            for (const file of files) {
+                                const formData = new FormData()
+                                formData.append("files", file)
+                                console.log('outerid', prodid)
+                                if (prodid !== null) {
+                                    formData.append("productId", prodid)
+                                }
+                                try {
+                                    const response = await Requests.EProduct.UploadFile(formData)
+                                    console.log(response)
+                                    if (response.data.statusCode === 200) {
+                                        newfiles.push(response.data.body.large[0])
+                                        prodid = response.data.body.productId
+                                    }
+                                } catch (error) {
+                                    if (error) {
+                                        console.log(error)
+                                    }
+                                }
+                            }
+                            setProductId(prodid)
+                            item2["images"] = newfiles
+                        }
+                    }
+                    return item2
+                }))
+            }
+            return item
+        })
+        setVariant(newInputFIelds)
+    }
+
+
+    return (
+        <form onSubmit={handleSubmit(onSubmit)}>
+            <Container.Row>
+
+                {/* Title */}
+                <Container.Column className="col-lg-4">
+                    <FormGroup>
+                        {errors.name && errors.name.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.name && errors.name.message}</Text> :
+                            <Text className="fs-13 mb-0"> Name (EN)<span className="text-danger">*</span></Text>
+                        }
+
+                        <input
+                            type="text"
+                            className={errors.name ? "form-control shadow-none error" : "form-control shadow-none"}
+                            placeholder="Enter name"
+                            defaultValue={productData ? productData.name : null}
+                            {...register("name", { required: "Name is required" })}
+                        />
+                    </FormGroup>
+                </Container.Column>
+
+                {/* Bangla title */}
+                <Container.Column className="col-lg-4">
+                    <FormGroup>
+                        {errors.banglaName && errors.banglaName.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.banglaName && errors.banglaName.message}</Text> :
+                            <Text className="fs-13 mb-0"> Bangla Name (BN) </Text>
+                        }
+
+                        <input
+                            type="text"
+                            className={errors.banglaName ? "form-control shadow-none error" : "form-control shadow-none"}
+                            placeholder="Enter Bangla Name"
+                            defaultValue={productData ? productData.banglaName : null}
+                            {...register("banglaName")}
+                        />
+                    </FormGroup>
+                </Container.Column>
+
+                {/* SKU */}
+                <Container.Column className="col-lg-4">
+                    <FormGroup>
+                        {errors.sku && errors.sku.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.sku && errors.sku.message}</Text> :
+                            <Text className="fs-13 mb-0"> SKU <AlertCircle size={14} /> <span className="text-danger">*</span></Text>
+                        }
+
+                        <input
+                            type="text"
+                            className={errors.sku ? "form-control shadow-none error" : "form-control shadow-none"}
+                            placeholder="Enter Sku"
+                            defaultValue={productData ? productData.sku : null}
+                            {...register("sku", { required: "Sku is required" })}
+                        />
+                    </FormGroup>
+                </Container.Column>
+
+
+                {/* Barcode */}
+                <Container.Column className="col-lg-4">
+                    <FormGroup>
+                        {errors.barcodeType && errors.barcodeType.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.barcodeType && errors.barcodeType.message}</Text> :
+                            <Text className="fs-13 mb-0"> Barcode <AlertCircle size={14} /> <span className="text-danger">*</span></Text>
+                        }
+                        <select
+                            className='form-control shadow-none'
+                            {...register("barcodeType", { required: "Barcode is required" })}
+                        >
+                            {['Code 39', 'Code 128', 'Interleaved 2 of 5', 'UPC', 'EAN', 'PDF417', 'Data Matrix', 'Quick Response Codes'].map((item, index) => <option value={item} key={index}>{item}</option>)}
+                        </select>
+                    </FormGroup>
+                </Container.Column>
+
+
+                {/* Brand */}
+                <Container.Column className="col-lg-4">
+                    <FormGroup>
+                        {errors.brand && errors.brand.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.brand && errors.brand.message}</Text> :
+                            <Text className="fs-13 mb-0">Brand <span className="text-danger">*</span></Text>
+                        }
+                        <div className='d-flex justify-content-start'>
+                            <div className='w-100'>
+                                <SingleSelect
+                                    borderRadius={4}
+                                    placeholder="brand"
+                                    deafult={productData && productData.brand ?
+                                        {
+                                            value: productData.brand._id,
+                                            label: productData.brand.title
+                                        } : null}
+                                    options={brandList}
+                                    value={data => {
+                                        setBrand(data.value)
+                                        clearErrors("brand")
+                                    }}
+                                />
+                            </div>
+                            <div className='p-2 border'>
+                                <PlusCircle />
+                            </div>
+                        </div>
+
+                    </FormGroup>
+                </Container.Column>
+
+                {/* Stock Amount */}
+                <Container.Column className="col-lg-4">
+                    <FormGroup>
+                        {errors.stockAmount && errors.stockAmount.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.stockAmount && errors.stockAmount.message}</Text> :
+                            <Text className="fs-13 mb-0">Stock Amount <span className="text-danger">*</span></Text>
+                        }
+                        <input
+                            type="number"
+                            min={0}
+                            className={errors.stockAmount ? "form-control shadow-none error" : "form-control shadow-none"}
+                            placeholder="Enter Stock Amount"
+                            defaultValue={productData ? productData.stockAmount : null}
+                            {...register("stockAmount", { required: "Stock Amount is required" })}
+                        />
+                    </FormGroup>
+                </Container.Column>
+
+                {/* Category */}
+                <Container.Column className="col-lg-4">
+                    <FormGroup>
+                        {errors.category && errors.category.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.category && errors.category.message}</Text> :
+                            <Text className="fs-13 mb-0">Category <span className="text-danger">*</span></Text>
+                        }
+
+                        <SingleSelect
+                            borderRadius={4}
+                            placeholder="category"
+                            deafult={productData && productData.category ?
+                                {
+                                    value: productData.category._id ? productData.category._id : null,
+                                    label: productData.category.name ? productData.category.name : null
+                                } : null}
+                            options={categoryList}
+                            value={data => {
+                                setCategory(data.value)
+                                clearErrors("category")
+                            }}
+                        />
+                    </FormGroup>
+                </Container.Column>
+
+                {/* Sub Category */}
+                <Container.Column className="col-lg-4">
+                    <FormGroup>
+                        {errors.subcategory && errors.subcategory.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.subcategory && errors.subcategory.message}</Text> :
+                            <Text className="fs-13 mb-0">Sub Category <span className="text-danger">*</span></Text>
+                        }
+
+                        <SingleSelect
+                            borderRadius={4}
+                            placeholder="sub category"
+                            deafult={productData && productData.subcategory ?
+                                {
+                                    value: productData.subcategory._id ? productData.subcategory._id : null,
+                                    label: productData.subcategory.name ? productData.subcategory.name : null
+                                } : null}
+                            options={categoryList}
+                            value={data => {
+                                setSubsubcategory(data.value)
+                                clearErrors("subcategory")
+                            }}
+                        />
+                    </FormGroup>
+                </Container.Column>
+
+
+                {/* Business Location */}
+                <Container.Column className="col-lg-4">
+                    <FormGroup>
+                        {errors.business_locations && errors.business_locations.message ?
+                            <Text className="text-danger fs-13 mb-1">{errors.business_locations && errors.business_locations.message}</Text>
+                            : <Text className="fs-13 mb-0">Business Locations <AlertCircle size={15} /> <span className="text-danger">*</span></Text>}
+                        <CreatableSelect
+                            placeholder="business locations"
+                            deafult={productData && productData.business_locations && productData.business_locations.length > 0 ?
+                                [...productData.business_locations.map(data => {
+                                    return {
+                                        label: data,
+                                        value: data
+                                    }
+                                })]
+                                : null}
+                            value={event => {
+                                const value = []
+                                event.map(item => {
+                                    value.push(item.value)
+                                    return value
+                                })
+                                setBusinessLocation(value)
+                                clearErrors('business_locations')
+                            }}
+                        />
+                    </FormGroup>
+                </Container.Column>
+
+                {/* Stock Section */}
+                <Container.Column className={stockmanage ? `col-lg-4` : `col-lg-12`}>
+                    <FormGroup>
+
+                        <div className="form-check">
+                            <input
+                                className="form-check-input"
+                                type="checkbox"
+                                checked={stockmanage ? true : false}
+                                onChange={() => { setStockManage(!stockmanage) }}
+                                style={{ cursor: 'pointer' }} id="flexCheckDefault2"
+                            />
+                            <label className="form-check-label" htmlFor="flexCheckDefault2" style={{ cursor: 'pointer' }}>
+                                Manage Stock? <AlertCircle size={15} />
+                            </label>
+                        </div>
+                        <span className='text-muted fs-12'>Enable Stock Management at product level</span>
+                    </FormGroup>
+                </Container.Column>
+
+                {/* Alert Stocks Quantity */}
+                {stockmanage ? (
+                    <Container.Column className="col-lg-8">
+                        <FormGroup>
+                            {errors.alertQuantity && errors.alertQuantity.message ?
+                                <Text className="text-danger fs-13 mb-0">{errors.alertQuantity && errors.alertQuantity.message}</Text> :
+                                <Text className="fs-13 mb-0"> Alert Quantity </Text>
+                            }
+
+                            <input
+                                type="number"
+                                min={0}
+                                step=".01"
+                                className={errors.alertQuantity ? "form-control shadow-none error" : "form-control shadow-none"}
+                                placeholder="Alert Quantity"
+                                defaultValue={productData ? productData.alertQuantity : null}
+                                {...register("alertQuantity")}
+                            />
+                        </FormGroup>
+                    </Container.Column>
+                ) : null}
+
+
+                {/* Description */}
+                <Container.Column className="col-lg-7">
+                    <FormGroup>
+                        {errors.description && errors.description.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.description && errors.description.message}</Text> :
+                            <Text className="fs-13 mb-0">Description</Text>
+                        }
+
+                        <JoditEditor
+                            ref={editor}
+                            config={{ readonly: false }}
+                            tabIndex={1}
+                            value={description}
+                            onBlur={event => setDescription(event)}
+                            onChange={event => { }}
+                        />
+                    </FormGroup>
+                </Container.Column>
+
+                {/* Short Description */}
+                <Container.Column className="col-lg-5">
+                    <FormGroup>
+                        {errors.shortDescription && errors.shortDescription.message ?
+                            <Text className="text-danger fs-13 mb-0">{errors.shortDescription && errors.shortDescription.message}</Text> :
+                            <Text className="fs-13 mb-0">Short Description</Text>
+                        }
+
+                        <JoditEditor
+                            ref={editor2}
+                            config={{ readonly: false }}
+                            tabIndex={1}
+                            value={shortDescription}
+                            onBlur={event => setShortDescription(event)}
+                            onChange={event => { }}
+                        />
+                    </FormGroup>
+                </Container.Column>
+
+                {/* Main Image */}
+                <Container.Column className="col-lg-3">
+                    <div className='d-flex justify-content-start'>
+                        <div>
+                            <FileUploader
+                                imageURL={productData && productData.thumbnail &&
+                                    productData.thumbnail.small ? Requests.HostUrl + productData.thumbnail.small : null}
+                                error={errors.largeThumbnail ? errors.largeThumbnail.message : ""}
+                                width={140}
+                                height={140}
+                                title="Main Image"
+                                dataHandeller={(data) => {
+                                    if (data.error) {
+                                        setError("largeThumbnail", {
+                                            type: "manual",
+                                            message: data.error
+                                        })
+                                    }
+
+                                    if (data.image) {
+                                        clearErrors("largeThumbnail")
+
+                                        handleSingleImage(data.image)
+                                    }
+                                }}
+                                input={true}
+                            />
+                        </div>
+                        <div className='ms-2'>
+                            <MultiFileUploader
+                                error={product_image_error}
+                                images={productImages2}
+                                width={130}
+                                height={130}
+                                limit={10000}
+                                title={"Galary Image"}
+                                dataHandeller={handleProductImages}
+                                handleLocalImageDelete={handleLocalImageDelete}
+                            />
+                        </div>
+
+                    </div>
+                </Container.Column>
+
+            </Container.Row >
+
+            {/* Extra Information Section */}
+            <Container.Basic className="border rounded mb-3">
+
+                <Container.Row className="pt-2">
+                    {/* Weight */}
+                    <Container.Column>
+                        <FormGroup>
+                            {errors.weight && errors.weight.message ?
+                                <Text className="text-danger fs-13 mb-0">{errors.weight && errors.weight.message}</Text> :
+                                <Text className="fs-13 mb-0"> Weight </Text>
+                            }
+
+                            <input
+                                type="number"
+                                min={0}
+                                step=".01"
+                                className={errors.weight ? "form-control shadow-none error" : "form-control shadow-none"}
+                                placeholder="Alert Quantity"
+                                defaultValue={productData ? productData.weight : null}
+                                {...register("weight")}
+                            />
+                        </FormGroup>
+                    </Container.Column>
+                    <Text className="fs-14 fw-bolder">Dimensions</Text>
+                    {/* Length */}
+                    <Container.Column className="col-lg-4">
+                        <FormGroup>
+                            {errors.length && errors.length.message ?
+                                <Text className="text-danger fs-13 mb-0">{errors.length && errors.length.message}</Text> :
+                                <Text className="fs-13 mb-0"> Length </Text>
+                            }
+
+                            <input
+                                type="number"
+                                min={0}
+                                step=".01"
+                                className={errors.length ? "form-control shadow-none error" : "form-control shadow-none"}
+                                placeholder="Length"
+                                defaultValue={productData ? productData.length : null}
+                                {...register("length")}
+                            />
+                        </FormGroup>
+                    </Container.Column>
+
+                    {/* Width */}
+                    <Container.Column className="col-lg-4">
+                        <FormGroup>
+                            {errors.width && errors.width.message ?
+                                <Text className="text-danger fs-13 mb-0">{errors.width && errors.width.message}</Text> :
+                                <Text className="fs-13 mb-0"> Width </Text>
+                            }
+
+                            <input
+                                type="number"
+                                min={0}
+                                step=".01"
+                                className={errors.width ? "form-control shadow-none error" : "form-control shadow-none"}
+                                placeholder="Width"
+                                defaultValue={productData ? productData.width : null}
+                                {...register("width")}
+                            />
+                        </FormGroup>
+                    </Container.Column>
+
+                    {/* Height */}
+                    <Container.Column className="col-lg-4">
+                        <FormGroup>
+                            {errors.height && errors.height.message ?
+                                <Text className="text-danger fs-13 mb-0">{errors.height && errors.height.message}</Text> :
+                                <Text className="fs-13 mb-0"> Height </Text>
+                            }
+
+                            <input
+                                type="number"
+                                min={0}
+                                step=".01"
+                                className={errors.height ? "form-control shadow-none error" : "form-control shadow-none"}
+                                placeholder="Height"
+                                defaultValue={productData ? productData.height : null}
+                                {...register("height")}
+                            />
+                        </FormGroup>
+                    </Container.Column>
+                    {/* Button For Custom Fields */}
+                    <div className='mb-3' >
+                        <span style={{ marginTop: "1.3rem", cursor: "pointer" }} className='text-primary' onClick={() => handleAddCustomFields(uuid())}>Add Custom Fields <PlusCircle size={18} /></span>
+                    </div>
+
+                    {/* Custom Fields */}
+                    {customfields && customfields.map((item, index) => {
+                        return (
+                            <>
+                                <Container.Column className="col-lg-12 mb-3" key={index}>
+                                    <div className='d-flex justify-content-start'>
+
+                                        <FormGroup className="w-100">
+                                            {errors.label && errors.label.message ?
+                                                <Text className="text-danger fs-13 mb-0">{errors.label && errors.label.message}</Text> :
+                                                <Text className="fs-13 mb-0">Custom Label </Text>
+                                            }
+
+                                            <input
+                                                type="text"
+                                                className={errors.heighlabel ? "form-control shadow-none error" : "form-control shadow-none"}
+                                                placeholder="Label"
+                                                onChange={(event) => handleChangeInputCustomField(item.id, event, 'label')}
+
+                                            />
+                                        </FormGroup>
+                                        <FormGroup className="w-100 ms-3">
+                                            {errors.value && errors.value.message ?
+                                                <Text className="text-danger fs-13 mb-0">{errors.value && errors.value.message}</Text> :
+                                                <Text className="fs-13 mb-0">Custom Value</Text>
+                                            }
+
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                step=".01"
+                                                className={errors.value ? "form-control shadow-none error" : "form-control shadow-none"}
+                                                placeholder="value"
+                                                onChange={(event) => handleChangeInputCustomField(item.id, event, 'value')}
+                                            />
+                                        </FormGroup>
+                                        <div className='border rounded ms-2 p-2' style={{ marginTop: "1.3rem", cursor: "pointer" }} onClick={() => handleRemoveCustomFields(uuid())}>
+                                            <MinusCircle size={22} />
+                                        </div>
+                                    </div>
+                                </Container.Column>
+                            </>
+                        )
+
+                    })}
+                </Container.Row>
+            </Container.Basic>
+
+
+            <Container.Basic className="border rounded mb-3">
+                <Container.Row className="mt-2">
+                    <>
+
+                        {/* Applicable tax */}
+                        <Container.Column className="col-lg-6">
+                            <FormGroup>
+                                {errors.applicableTax && errors.applicableTax.message ?
+                                    <Text className="text-danger fs-13 mb-0">{errors.applicableTax && errors.applicableTax.message}</Text> :
+                                    <Text className="fs-13 mb-0"> Applicable Tax </Text>
+                                }
+
+                                <input
+                                    type="number"
+                                    min={0}
+                                    step=".01"
+                                    className={errors.applicableTax ? "form-control shadow-none error" : "form-control shadow-none"}
+                                    placeholder="Enter Applicable Tax"
+                                    defaultValue={productData ? productData.applicableTax : null}
+                                    {...register("applicableTax")}
+                                />
+                            </FormGroup>
+                        </Container.Column>
+
+                        {/* Selling Price tax */}
+                        <Container.Column className="col-lg-6">
+                            <FormGroup>
+                                {errors.sellingPriceTax && errors.sellingPriceTax.message ?
+                                    <Text className="text-danger fs-13 mb-0">{errors.sellingPriceTax && errors.sellingPriceTax.message}</Text> :
+                                    <Text className="fs-13 mb-0"> Selling Price </Text>
+                                }
+
+                                <input
+                                    type="number"
+                                    min={0}
+                                    step=".01"
+                                    className={errors.sellingPriceTax ? "form-control shadow-none error" : "form-control shadow-none"}
+                                    placeholder="Enter Selling Price"
+                                    defaultValue={productData ? productData.sellingPriceTax : null}
+                                    {...register("sellingPriceTax")}
+                                />
+                            </FormGroup>
+                        </Container.Column>
+                    </>
+                    {/* Extra Section for single product */}
+                    {variant && variant.length <= 0 ? (
+                        <>
+                            {/* price including tax */}
+                            <Container.Column className="col-lg-6">
+                                <FormGroup>
+                                    {errors.priceExcludingTax && errors.priceExcludingTax.message ?
+                                        <Text className="text-danger fs-13 mb-0">{errors.priceExcludingTax && errors.priceExcludingTax.message}</Text> :
+                                        <Text className="fs-13 mb-0"> Price excluding Tax </Text>
+                                    }
+
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step=".01"
+                                        className={errors.priceExcludingTax ? "form-control shadow-none error" : "form-control shadow-none"}
+                                        placeholder="Enter Price excluding Tax"
+                                        value={getValues("priceExcludingTax")}
+                                        onChange={event => setValue("priceExcludingTax", event.target.value)}
+                                    />
+                                </FormGroup>
+                            </Container.Column>
+
+                            {/* price excluding tax */}
+                            <Container.Column className="col-lg-6">
+                                <FormGroup>
+                                    {errors.priceIncludingTax && errors.priceIncludingTax.message ?
+                                        <Text className="text-danger fs-13 mb-0">{errors.priceIncludingTax && errors.priceIncludingTax.message}</Text> :
+                                        <Text className="fs-13 mb-0"> Price Including Tax </Text>
+                                    }
+
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step=".01"
+                                        className={errors.priceIncludingTax ? "form-control shadow-none error" : "form-control shadow-none"}
+                                        placeholder="Enter Price Including Tax"
+                                        value={getValues("priceIncludingTax")}
+                                        onChange={event => setValue("priceIncludingTax", event.target.value)}
+                                    />
+                                </FormGroup>
+                            </Container.Column>
+                            {/* margin */}
+                            <Container.Column className="col-lg-6">
+                                <FormGroup>
+                                    {errors.margin && errors.margin.message ?
+                                        <Text className="text-danger fs-13 mb-0">{errors.margin && errors.margin.message}</Text> :
+                                        <Text className="fs-13 mb-0"> Margin </Text>
+                                    }
+
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step=".01"
+                                        className={errors.margin ? "form-control shadow-none error" : "form-control shadow-none"}
+                                        placeholder="Enter Margin"
+                                        value={getValues("margin")}
+                                        onChange={event => setValue("margin", event.target.value)}
+                                    />
+                                </FormGroup>
+                            </Container.Column>
+                            {/* Selling Price */}
+                            <Container.Column className="col-lg-6">
+                                <FormGroup>
+                                    {errors.sellingPrice && errors.sellingPrice.message ?
+                                        <Text className="text-danger fs-13 mb-0">{errors.sellingPrice && errors.sellingPrice.message}</Text> :
+                                        <Text className="fs-13 mb-0"> Selling Price </Text>
+                                    }
+
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step=".01"
+                                        className={errors.sellingPrice ? "form-control shadow-none error" : "form-control shadow-none"}
+                                        placeholder="Enter Selling Price"
+                                        value={((parseFloat(getValues("margin")) / 100) * 100) + parseFloat(getValues("priceExcludingTax"))}
+                                    />
+                                </FormGroup>
+                            </Container.Column>
+                        </>
+                    ) : null}
+
+
+                    {/* Variation */}
+                    <div className='d-flex justify-content-start'>
+                        <Text className="fs-22">Add Variation</Text>
+                        <div>
+                            <span className='btn btn-primary  p-1 m-1' onClick={() => handleSetVariant(null, uuid())} style={{ cursor: "pointer" }}>
+                                <Plus size={22} />
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* main section for variant values and selections */}
+                    {variant && variant.map((item, index) => {
+                        return (
+                            <>
+                                <Container.Column className="col-lg-2 bg-success" style={{ borderRight: "1px solid white" }} key={index}>
+                                    <Text className="text-white mb-0 mt-1 mb-1">Variation</Text>
+                                </Container.Column>
+                                <Container.Column className="col-lg-10 bg-success">
+                                    <Text className="text-white mb-0 mt-1 mb-1">Variation Values</Text>
+                                </Container.Column>
+
+
+                                <Container.Column className="col-lg-2 mt-2">
+                                    <select className='form-control shadow-none' onChange={(event) => handleSetVariant(event.target.value, item.id)}>
+                                        {variations && variations.map((item, index) => <option key={index} value={JSON.stringify(item)}>{item.name}</option>)}
+                                    </select>
+                                </Container.Column>
+                                <Container.Column className="col-lg-10 table-responsive">
+                                    <table className='table'>
+                                        <thead>
+                                            <tr>
+                                                <td>SKU</td>
+                                                <td>Value</td>
+                                                <td>Default Purchase Price</td>
+                                                <td>X Margin(%)</td>
+                                                <td>Default Selling Price</td>
+                                                <td>Stock Amount</td>
+                                                <td>Manage Stock</td>
+                                                <td>Alert Amount</td>
+                                                <td>Variation Images</td>
+                                                <td><span className='btn btn-primary m-0 p-0' style={{ cursor: "pointer" }} onClick={() => item.values.length ? handleAddVariationValues(item.id) : null}><Plus /></span></td>
+                                            </tr>
+                                        </thead>
+                                        <thead>
+
+                                            {loading ?
+                                                item && item.values.map((item2, index) => {
+                                                    return (
+                                                        <tr key={index}>
+                                                            <td style={{ width: "10%" }}>
+                                                                <input type="text" className='form-control shadow-none' onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'sku')} />
+                                                            </td>
+                                                            <td style={{ width: "20%" }}>
+                                                                <input type="text" className='form-control shadow-none' defaultValue={item2.value} onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'value')} />
+                                                            </td>
+                                                            <td style={{ width: "30%" }}>
+                                                                <div className='d-flex justify-content-start'>
+                                                                    <input type="number" step=".01" min={0} className='form-control shadow-none' onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'priceExcludingTax')} />
+                                                                    <input type="number" step=".01" min={0} className='form-control shadow-none ms-1' onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'priceIncludingTax')} />
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <input type="text" className='form-control shadow-none' onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'margin')} />
+                                                            </td>
+                                                            <td>
+                                                                <input type="number" step=".01" min={0} className='form-control shadow-none' onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'sellingPrice')} />
+                                                            </td>
+                                                            <td>
+                                                                <select className='form-control shadow-none' onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'manageStock')}>
+                                                                    <option value="">Choose</option>
+                                                                    <option value="true">True</option>
+                                                                    <option value="false">false</option>
+                                                                </select>
+                                                            </td>
+                                                            <td>
+                                                                <input type="number" step=".01" min={0} className='form-control shadow-none' onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'alertAmount')} />
+                                                            </td>
+                                                            <td>
+                                                                <input type="number" step=".01" min={0} className='form-control shadow-none' onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'stockAmount')} />
+                                                            </td>
+                                                            <td>
+                                                                <input type="file" multiple onChange={(event) => handleChangeInputVarient(item.id, item2.id, event, 'images')} />
+                                                            </td>
+                                                            <td>
+                                                                <span className='btn btn-danger p-0 ps-1 pe-1' style={{ cursor: "pointer" }} onClick={() => handleRemoveVarient(item.id, item2.id)}><Minus size={12} /></span>
+                                                            </td>
+                                                        </tr>
+
+                                                    )
+                                                })
+                                                : null}
+
+                                        </thead>
+                                    </table>
+                                </Container.Column>
+
+                            </>
+                        )
+                    })}
+
+
+                </Container.Row>
+            </Container.Basic>
+
+            {/* Submit button */}
+            <div className="text-end">
+                <PrimaryButton
+                    type="submit"
+                    className="px-4 fw-bolder"
+                    disabled={props.loading}
+                ><Text className="text-uppercase fs-14 mb-0">
+                        {props.loading
+                            ? props.update
+                                ? "Updating ..."
+                                : "Submitting ..."
+                            : props.update
+                                ? "Update"
+                                : "Save and Add Another"}
+                    </Text></PrimaryButton>
+                {/* button */}
+                <SecondaryButton
+                    type="submit"
+                    className="px-4 fw-bolder"
+                    disabled={props.loading}
+                ><Text className="text-uppercase fs-14 mb-0">
+                        {props.loading
+                            ? props.update
+                                ? "Updating ..."
+                                : "Submitting ..."
+                            : props.update
+                                ? "Update"
+                                : "Reset"}
+                    </Text></SecondaryButton>
+            </div>
+        </form>
+    );
+}

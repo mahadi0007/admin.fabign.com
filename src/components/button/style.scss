@@ -1,0 +1,116 @@
+@import "../../colors.scss";
+
+.btn {
+    color: #fff !important;
+}
+
+.custom-btn-primary {
+    background: $primary;
+    padding: 10px 25px;
+
+    &:disabled {
+        background: #f6990e7e !important;
+    }
+}
+
+.custom-btn-secondary {
+    color: #f6990e !important;
+    background: #f6990e38 !important;
+    padding: 10px 25px !important;
+
+    &:hover {
+        color: #fc9905 !important;
+        background: #f6990e54 !important;
+    }
+
+    &:disabled {
+        color: #fc9905 !important;
+        background: #f6990e54 !important;
+    }
+}
+
+.custom-btn-secondary-sm {
+    color: #f6990e !important;
+    background: #f6990e38 !important;
+    padding: 7px 12px !important;
+
+    &:hover {
+        color: #fc9905 !important;
+        background: #f6990e54 !important;
+    }
+
+    &:disabled {
+        color: #fc9905 !important;
+        background: #f6990e54 !important;
+    }
+}
+
+// .custom-btn-danger {
+//     color: #f6990e !important;
+//     background: #f6990e13 !important;
+
+//     &:hover {
+//         color: #fc9905 !important;
+//         background: #f6990e33 !important;
+//     }
+
+//     &:disabled {
+//         color: #fc9905 !important;
+//         background: #f6990e33 !important;
+//     }
+// }
+
+.custom-btn-gray {
+    color: #6c757d !important;
+    background: #f8f9fa !important;
+
+    &:hover {
+        color: #212529 !important;
+        background: #e9ecef !important;
+    }
+}
+
+.btn-circle {
+    border-radius: 50% !important;
+    padding: 9px 12px !important;
+}
+
+// Success button
+.btn-custom-success {
+    color: #198754 !important;
+    background: #19875417 !important;
+
+    &:hover {
+        color: #198754 !important;
+        background: #19875444 !important;
+    }
+}
+
+// Float button
+.btn-float {
+    position: fixed;
+    top: 45%;
+    right: 40px !important;
+    z-index: 99;
+    padding: 10px 10px !important;
+    border-radius: 50% !important;
+    color: #198754 !important;
+    background: #12724517 !important;
+    transition: 0.2s all;
+
+    &:hover {
+        color: #fff !important;
+        background: #198754 !important;
+    }
+}
+
+// Danger button
+.btn-custom-danger {
+    color: #dc3546a4 !important;
+    background: #dc354610 !important;
+
+    &:hover {
+        color: #dc3545 !important;
+        background: #dc35463a !important;
+    }
+}

@@ -1,0 +1,28 @@
+.product-material-inputs,
+.dynamic-additional-fields-container {
+    background: #2962ff0e;
+
+    .plus-btn {
+        padding: 3px 4px;
+        color: #28c76f !important;
+        background: #28c76f21 !important;
+
+        &:hover {
+            color: #28c76f !important;
+        }
+    }
+
+    .close-btn {
+        padding: 3px 4px;
+        color: #ea5455 !important;
+        background: #ea545421 !important;
+
+        &:hover {
+            color: #ea5455 !important;
+        }
+    }
+}
+
+.ql-toolbar.ql-snow + .ql-container.ql-snow {
+    min-height: 200px !important;
+}

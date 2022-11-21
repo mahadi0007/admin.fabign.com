@@ -1,0 +1,29 @@
+.auth-container {
+    .skew-section-1 {
+        width: 100%;
+        height: 60vh;
+        position: fixed;
+        top: -100px;
+        left: 0;
+        z-index: 0;
+        transform: skewY(-5deg);
+        background: #fad7a350;
+    }
+
+    .card-section {
+        min-width: 100% !important;
+        min-height: 100vh !important;
+
+        .card {
+            width: 90vw;
+
+            @media (min-width: 576px) {
+                width: 480px;
+            }
+
+            @media (min-width: 992px) {
+                width: 420px;
+            }
+        }
+    }
+}
