@@ -108,7 +108,7 @@ export const Layout = (props) => {
           className={show ? "sidebar shadow open-sidebar" : "sidebar shadow"}
         >
           <div className="logo py-1">
-            <Image src={Images.Logo} alt="EFG Logo" x={300} y={60} />
+            <Image src={Images.Logo} alt="Fabign Logo" x={300} y={60} />
           </div>
           <div className="main-menu-bar">
             <div className="text-center pb-3">
