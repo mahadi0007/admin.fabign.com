@@ -71,7 +71,7 @@ const Index = () => {
   // handle paginate row change
   const handlePerRowsChange = async (newPerPage, page) => {
     setLoading(true);
-    const response = await Requests.Fabric.Index(page, newPerPage);
+    const response = await Requests.TopBar.Index(page, newPerPage);
     setData(response.data.data);
     setLimit(newPerPage);
     setLoading(false);

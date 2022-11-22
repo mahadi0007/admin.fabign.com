@@ -72,31 +72,6 @@ const Index = () => {
     setLimit(newPerPage);
     setLoading(false);
   };
-  // Handle search
-  const handleSearch = async (data) => {
-    setsearchLoading(true);
-    const response = await Requests.Search.Size(data);
-    if (response.data) setData(response.data.data);
-    setsearchLoading(false);
-  };
-
-  // Handle search suggestion
-  const handleSuggestion = async (value) => {
-    let data = {
-      results: [],
-      message: null,
-    };
-    const response = await Requests.Search.Size(value);
-    if (response && response.data.data && response.data.data.length) {
-      for (let i = 0; i < response.data.data.length; i++) {
-        const element = response.data.data[i];
-        data.results.push(element.title);
-      }
-    } else {
-      data.message = "No results found";
-    }
-    return data;
-  };
 
   // data columns
   const columns = [
@@ -208,12 +183,12 @@ const Index = () => {
                 totalRows={totalRows}
                 handlePerRowsChange={handlePerRowsChange}
                 handlePageChange={handlePageChange}
-                searchable
-                placeholder={"Search"}
-                search={handleSearch}
-                suggestion={handleSuggestion}
-                searchLoading={searchLoading}
-                clearSearch={() => fetchSize(1)}
+                // searchable
+                // placeholder={"Search"}
+                // search={handleSearch}
+                // suggestion={handleSuggestion}
+                // searchLoading={searchLoading}
+                // clearSearch={() => fetchSize(1)}
               />
             </Card.Body>
           </Card.Simple>
