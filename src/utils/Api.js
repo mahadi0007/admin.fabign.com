@@ -1,9 +1,9 @@
-export const AuthAPI = "http://164.92.119.47/api/v1/auth/";
+export const AuthAPI = "http://api.fabign.com/api/v1/auth/";
 // export const AuthAPI = "http://localhost:4010/api/v1/auth/";
-export const AclAPI = "http://164.92.119.47/api/v1/";
+export const AclAPI = "http://api.fabign.com/api/v1/";
 // export const AclAPI = "http://localhost:4010/api/v1/";
-export const API = "http://164.92.119.47/api/v1/admin/";
+export const API = "http://api.fabign.com/api/v1/admin/";
 // export const API = "http://localhost:4010/api/v1/admin/";
-export const ECommerceApi = "http://164.92.119.47/api/v1/e-efg/";
+export const ECommerceApi = "http://api.fabign.com/api/v1/e-efg/";
 // export const ECommerceApi = "http://localhost:4010/api/v1/e-efg/";
 export const SmsApi = "https://api.sms.net.bd/";
